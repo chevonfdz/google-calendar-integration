@@ -90,7 +90,6 @@ app.post('/google/schedule_event', async (req, res) => {
   }
 });
 
-
 app.get('/google/get_events', async (req, res) => {
   const date = req.query.date;
   if (!date) {

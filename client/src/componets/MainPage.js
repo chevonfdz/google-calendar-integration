@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function MainPage() {
   const [events, setEvents] = useState([]);
+  const [studentDetails, setStudentDetails] = useState({});
 
   const handleCreateEvent = async () => {
     const eventDuration = 90; // Duration in minutes
@@ -58,13 +59,43 @@ function MainPage() {
     }
   };
 
+  const updateStudentDetails = (newDetails) => {
+    setStudentDetails(newDetails);
+  };
+
+  const handleGenerateSchedule = async () => {
+    if (Object.keys(studentDetails).length === 0) {
+      toast.error('Please fill out the student details first.');
+      return;
+    }
+
+    const payload = {
+      studentDetails, // This should contain all the data from StudentInputPage
+      calendarEvents: events // This contains the fetched calendar events
+    };
+
+    // Log the JSON payload to the console
+    console.log('JSON payload to be sent to ML model:', JSON.stringify(payload, null, 2));
+    
+    // Here you would typically send the payload to your ML model's endpoint
+    // const response = await fetch(`${process.env.REACT_APP_ML_MODEL_URL}/generate_schedule`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(payload),
+    // });
+    // Handle the response from your ML model here
+
+    toast.info('Payload logged to console');
+  };
+
+
   return (
     <div>
       <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} />
-      <StudentInputPage />
       <button onClick={handleCreateEvent}>Create Event</button>
       <button onClick={handleGetEvents}>Get Events</button>
-      <div>
+      <StudentInputPage onStudentDetailsChange={updateStudentDetails} />
+      <button onClick={handleGenerateSchedule}>Generate Study Schedule</button>      <div>
         {events.length > 0 ? (
           events.map((event, index) => (
             <div key={index}>
