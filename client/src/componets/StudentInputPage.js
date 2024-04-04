@@ -47,21 +47,6 @@ const STUDY_TIMES = [
       }));
     };
 
-  const handleCategoryChange = (event) => {
-    const index = Number(event.target.value);
-    const subjects = STREAMS_SUBJECTS[formData.stream][index];
-
-    setFormData(prev => ({
-      ...prev,
-      categoryIndex: index,
-      subjects,
-      previousMarks: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {}),
-      difficultyLevels: subjects.reduce((acc, subject) => ({ ...acc, [subject]: 3 }), {}),
-      desiredMarks: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {}),
-      targetDates: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {})
-    }));
-  };
-
   const handleInputChange = (event, type, subject) => {
     const value = event.target.value;
     setFormData(prev => {
@@ -91,22 +76,6 @@ const STUDY_TIMES = [
         ...prev.preferredStudyTimes,
         [timeSlot]: !prev.preferredStudyTimes[timeSlot]
       }
-    }));
-  };
-
-  const handleMaxContinuousStudyDurationChange = (event) => {
-    const duration = Math.max(30, Math.min(Number(event.target.value), 90));
-    setFormData(prev => ({
-      ...prev,
-      maxContinuousStudyDuration: duration
-    }));
-  };
-
-  const handleBreakDurationChange = (event) => {
-    const duration = Math.max(5, Math.min(Number(event.target.value), 20));
-    setFormData(prev => ({
-      ...prev,
-      breakDuration: duration
     }));
   };
 
@@ -152,30 +121,6 @@ const STUDY_TIMES = [
           ))}
         </fieldset>
 
-        <label htmlFor="maxContinuousStudyDuration">
-          Maximum time period that you can study continuously? (30-90 minutes)
-        </label>
-        <input
-          id="maxContinuousStudyDuration"
-          type="number"
-          value={formData.maxContinuousStudyDuration}
-          onChange={handleMaxContinuousStudyDurationChange}
-          min="30"
-          max="90"
-        />
-
-        <label htmlFor="breakDuration">
-          How much break time is needed for in-between study sessions? (5-20 minutes)
-        </label>
-        <input
-          id="breakDuration"
-          type="number"
-          value={formData.breakDuration}
-          onChange={handleBreakDurationChange}
-          min="5"
-          max="20"
-        />
-
         {formData.subjects.map(subject => (
           <div key={subject}>
             <h3>{subject}</h3>
@@ -211,7 +156,6 @@ const STUDY_TIMES = [
             />
           </div>
         ))}
-        <button type="submit">Submit</button>
       </form>
     </div>
   );

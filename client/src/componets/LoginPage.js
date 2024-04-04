@@ -1,7 +1,7 @@
 import React from 'react';
 // import Button from 'react-bootstrap/Button';
 import { Button } from 'react-bootstrap';
-import logo from '../logo/logocolor.png';
+// import logo from '../logo/logocolor.png';
 function LoginPage() {
   const handleLogin = () => {
     window.location.href = `${process.env.REACT_APP_SERVER_URL}/google`;
@@ -9,9 +9,9 @@ function LoginPage() {
 
   return (
     <div className="">
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <img src={logo} alt="Logo" className="mx-auto" />
-      </div>
+      </div> */}
       <Button onClick={handleLogin} >
         Login with Google
       </Button>
