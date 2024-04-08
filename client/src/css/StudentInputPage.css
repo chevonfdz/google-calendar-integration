@@ -1,0 +1,60 @@
+/* MainPage.css & StudentInputPage.css */
+.page-container {
+    margin: 20px;
+  }
+  
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  .label {
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .input, .select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  .button {
+    padding: 10px 20px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .button:hover {
+    background-color: #218838;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .page-container {
+      margin: 10px;
+    }
+  
+    .input, .select {
+      padding: 8px;
+    }
+  
+    .button {
+      padding: 8px 16px;
+    }
+  }
+
+  .input:focus, .select:focus, .button:hover {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+  }
+  
+  .input, .select {
+    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+  }
+  

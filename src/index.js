@@ -1,12 +1,16 @@
 import dotenv from 'dotenv';
-dotenv.config();
 import express from 'express';
 import { google } from 'googleapis';
 import session from 'express-session';
 import cors from 'cors';
+import axios from 'axios'; // Use import instead of require
+
+dotenv.config();
 
 // Create an Express application
 const app = express();
+
+const PORT = process.env.PORT || 3000;
 
 // Use CORS and session middleware
 app.use(cors());
@@ -36,10 +40,7 @@ console.log('Environment Variables:', {
     CLIENT_ID: process.env.CLIENT_ID,
     CLIENT_SECRET: process.env.CLIENT_SECRET,
     REDIRECT_URI: process.env.REDIRECT_URI,
-  });
-
-// Specify the port to listen on
-const PORT = process.env.PORT || 3000;
+});
 
 // Define scopes required for the Google Calendar API
 const scopes = [
@@ -47,7 +48,6 @@ const scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email'
 ];
-
 // Route to initiate Google OAuth2 login
 app.get('/google', (req, res) => {
     const url = oauth2Client.generateAuthUrl({
@@ -71,7 +71,6 @@ app.get('/google/redirect', async (req, res) => {
     }
   });
   
-
 // Route to schedule an event
 app.post('/google/schedule_event', async (req, res) => {
   try {
@@ -120,6 +119,15 @@ app.get('/google/get_events', async (req, res) => {
   }
 });
 
+app.post('/generate-schedule', async (req, res) => {
+  try {
+    const mlResponse = await axios.post('http://localhost:5000/predict', req.body);
+    res.json(mlResponse.data);
+  } catch (error) {
+    console.error('Error connecting to ML model:', error);
+    res.status(500).send('Failed to generate schedule');
+  }
+});
 
 // Root route
 app.get('/', (req, res) => {
@@ -128,5 +136,5 @@ app.get('/', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });

@@ -8,11 +8,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="">
+    <div className="login-container">
       {/* <div className="mb-8">
         <img src={logo} alt="Logo" className="mx-auto" />
       </div> */}
-      <Button onClick={handleLogin} >
+      <Button onClick={handleLogin} className="login-button">
         Login with Google
       </Button>
     </div>

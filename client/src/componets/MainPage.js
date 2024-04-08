@@ -73,46 +73,50 @@ function MainPage() {
       return;
     }
 
-    // Assume this is the ML model's response
-    const mlModelResponse = {
-      Mathematics: 90,
-      Physics: 45,
-      Chemistry: 75,
-    };
+    try {
+      const mlModelResponse = await fetch(`${process.env.REACT_APP_SERVER_URL}/generate-schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentDetails),
+      });
 
-    const freeTimeSlots = calculateFreeTimeSlots(events, studentDetails);
-    const studySessions = allocateStudySessions(
-      freeTimeSlots,
-      mlModelResponse,
-      studentDetails
-    );
+      if (!mlModelResponse.ok) throw new Error("Failed to receive schedule from ML model.");
+      const studyRecommendations = await mlModelResponse.json(); // Ensure this matches the expected format for allocateStudySessions
 
-    for (const session of studySessions) {
-      await handleCreateEvent(session); // Assuming handleCreateEvent is adapted to use this structure
+      // Proceed with existing logic to calculate free time slots and allocate study sessions
+      const freeTimeSlots = calculateFreeTimeSlots(events, studentDetails);
+      const studySessions = allocateStudySessions(freeTimeSlots, studyRecommendations, studentDetails);
+
+      // Create calendar events for each allocated study session
+      for (const session of studySessions) {
+        await handleCreateEvent(session);
+      }
+
+      setIsScheduleGenerated(true);
+      toast.success("Study schedule generated successfully!");
+    } catch (error) {
+      console.error("Error generating schedule:", error);
+      toast.error(`Failed to generate schedule: ${error.message}`);
     }
-
-    setIsScheduleGenerated(true);
-
-    // // Log the JSON payload to the console
-    // console.log('JSON payload to be sent to ML model:', JSON.stringify(payload, null, 2));
-
-    // Here you would typically send the payload to your ML model's endpoint
-    // const response = await fetch(`${process.env.REACT_APP_ML_MODEL_URL}/generate_schedule`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(payload),
-    // });
-    // Handle the response from your ML model here
-
   };
+
+
 
   // This function finds the intersections between free time slots and preferred study times
   function calculateFreeTimeSlots(events, studentDetails) {
-    const today = new Date();
-    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    const currentTime = new Date();
+    const nextDay = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
+    const endOfNextDay = new Date(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 23, 59, 59, 999);
+
+    const relevantEvents = events.filter(event => {
+      const eventEnd = new Date(event.end.dateTime);
+      return eventEnd >= currentTime && eventEnd <= endOfNextDay;
+    });
+
     const preferredStudyTimes = studentDetails.preferredStudyTimes || {};
-    const freeTimeSlots = findFreeSlots(events, today, endOfDay, preferredStudyTimes);
-    const preferredTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, today);
+    const freeTimeSlots = findFreeSlots(relevantEvents, nextDay, endOfNextDay, preferredStudyTimes);
+    const preferredTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, nextDay, endOfNextDay);
+
     const availableStudySlots = freeTimeSlots.filter(slot =>
       preferredTimeSlots.some(preferredSlot =>
         slot.end > preferredSlot.start && slot.start < preferredSlot.end
@@ -129,7 +133,6 @@ function MainPage() {
         }));
 
       // Combine the overlapping ranges if they are adjacent or overlapping
-      // Additional logic can be added here to merge time slots as needed
       return overlappingRanges.reduce((acc, current) => {
         // If the current slot starts before the previous one ends, it's overlapping
         if (acc.length && current.start <= acc[acc.length - 1].end) {
@@ -148,7 +151,6 @@ function MainPage() {
 
   function findFreeSlots(events, today, endOfDay, preferredStudyTimes) {
     let freeTimeSlots = [];
-
     if (events.length === 0 && Object.keys(preferredStudyTimes).length > 0) {
       freeTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, today);
     } else {
@@ -215,23 +217,23 @@ function MainPage() {
     const MAX_STUDY_DURATION = 45; // Maximum continuous study duration in minutes
     const BREAK_TIME = 10; // Break time in minutes
     const studySessions = [];
-  
+
     Object.entries(studyDurations).forEach(([subject, requiredDuration]) => {
       let remainingDuration = requiredDuration;
-  
+
       while (remainingDuration > 0) {
         // Find the first slot that can accommodate the session
         const slotIndex = freeTimeSlots.findIndex(slot => {
           const slotDuration = (new Date(slot.end) - new Date(slot.start)) / 60000;
           return slotDuration >= MAX_STUDY_DURATION;
         });
-  
+
         if (slotIndex !== -1) {
           const currentStudyDuration = Math.min(MAX_STUDY_DURATION, remainingDuration);
           const slot = freeTimeSlots[slotIndex];
           const startDateTime = new Date(slot.start);
           const endDateTime = new Date(startDateTime.getTime() + currentStudyDuration * 60000);
-          
+
           // Push the study session
           studySessions.push({
             summary: `Study ${subject}`,
@@ -239,11 +241,11 @@ function MainPage() {
             start: { dateTime: startDateTime.toISOString() },
             end: { dateTime: endDateTime.toISOString() },
           });
-  
+
           // Update remaining duration and the slot start time to reflect the booked session
           remainingDuration -= currentStudyDuration;
           slot.start = new Date(endDateTime.getTime() + BREAK_TIME * 60000).toISOString();
-  
+
           // If there is remaining duration, check if we need to add a break
           if (remainingDuration > 0 && currentStudyDuration === MAX_STUDY_DURATION) {
             // Consider break time
@@ -257,10 +259,9 @@ function MainPage() {
         }
       }
     });
-  
+
     return studySessions;
   }
-  
 
   return (
     <div>
