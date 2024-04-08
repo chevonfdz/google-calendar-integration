@@ -1,60 +1,422 @@
-/* MainPage.css & StudentInputPage.css */
-.page-container {
-    margin: 20px;
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .label {
-    display: block;
-    margin-bottom: 5px;
-  }
-  
-  .input, .select {
-    width: 100%;
-    padding: 10px;
-    margin-top: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  .button {
-    padding: 10px 20px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .button:hover {
-    background-color: #218838;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .page-container {
-      margin: 10px;
-    }
-  
-    .input, .select {
-      padding: 8px;
-    }
-  
-    .button {
-      padding: 8px 16px;
-    }
-  }
+/* customStyles.css */
+.student-input-page {
+  font-family: 'Open Sans', sans-serif;
+  background-color: #FFFFFF; /* white background */
+  color: #051726; /* dark blue text */
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 800px; /* Adjust the width as per your design */
+  margin: 20px auto; /* Centering the card */
+  padding: 20px;
+}
 
-  .input:focus, .select:focus, .button:hover {
-    border-color: #80bdff;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-  }
-  
-  .input, .select {
-    transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-  }
-  
+.app-container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 250px; /* Adjust as needed */
+  background-color: #051726; /* Dark slate */
+  color: #fff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* Side bar logo */
+.logo-container {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.logo {
+  max-width: 200px; /* Adjust as needed */
+  height: auto;
+}
+
+/* User info section */
+.user-info {
+  padding: 1rem;
+  text-align: center;
+}
+
+.user-icon {
+  /* Styling for user icon, adjust as needed */
+}
+
+.username {
+  font-size: 1rem;
+  color: #FFF; /* or any color you want */
+}
+
+/* Top bar date */
+.current-date {
+  font-size: 1rem;
+  color: #FFF; /* or any color you want */
+}
+
+/* Modify as necessary to suit your styling needs */
+.logo {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-link {
+  padding: 10px 0;
+  color: #fff;
+  text-decoration: none;
+  text-align: center;
+}
+
+.nav-link.active {
+  background-color: #81FFD9; /* Aqua */
+  border-radius: 4px;
+}
+
+.user-info {
+  text-align: center;
+  margin-top: auto; /* Pushes user info to the bottom */
+}
+
+.user-icon {
+  font-size: 24px; /* Adjust as needed */
+}
+
+.username {
+  margin-top: 10px;
+}
+
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.top-bar {
+  background-color: #2c3e50; /* Darker shade */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  color: white;
+}
+
+.welcome-message {
+  font-size: 18px; /* Adjust as needed */
+}
+
+.current-date {
+  font-size: 18px; /* Adjust as needed */
+}
+
+/* Continue with your existing CSS for form styling */
+
+
+.page-header {
+  background-color: #051726; /* dark blue background */
+  color: #81FFD9; /* light aqua text */
+  border-radius: 8px 8px 0 0;
+  padding: 16px;
+  margin: -20px -20px 20px -20px; /* Aligns header background with card edges */
+}
+
+.page-title {
+  margin: 0;
+  font-size: 1.5rem; /* 24px */
+}
+
+.student-details-form {
+  background-color: #FFFFFF; /* white background */
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: .5rem;
+  color: #051726; /* dark blue text */
+  font-weight: 600;
+}
+
+.form-select {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem; /* 16px */
+  border-radius: 4px;
+  border: 2px solid #81FFD9; /* light aqua border */
+  color: #051726; /* dark blue text */
+}
+
+.study-times-fieldset {
+  border: none;
+  margin-bottom: 1rem;
+}
+
+.fieldset-legend {
+  margin-bottom: .5rem;
+  font-weight: 600;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.checkbox-input {
+  accent-color: #81FFD9; /* light aqua accent */
+}
+
+.checkbox-label {
+  color: #051726; /* dark blue text */
+}
+
+.subject-details {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.subject-title {
+  color: #051726;
+  margin-bottom: 16px;
+}
+
+.metric-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #051726;
+  font-weight: bold;
+}
+
+.metric-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: calc(100% - 40px); /* Adjust width, considering padding and span width */
+  height: 5px;
+  border-radius: 5px;
+  background: #051726;
+  outline: none;
+  padding: 0;
+  margin: 0;
+}
+
+.metric-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #051726;
+  cursor: pointer;
+  border: none; /* Add this to remove border */
+}
+
+.metric-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #051726;
+  cursor: pointer;
+  border: none; /* Add this to remove border */
+}
+
+.slider-value {
+  display: inline-block;
+  width: 40px; /* Fixed width for the percentage display */
+  text-align: center;
+  color: #051726;
+  font-weight: bold;
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+}
+
+.metric-input {
+  width: calc(100% - 24px); /* Adjust the width as needed */
+  border: 2px solid #051726;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+/* Now style your button, date inputs, and other elements as needed. */
+
+
+.study-sessions-list {
+  padding-top: 1rem;
+}
+
+.sessions-title {
+  font-weight: 600;
+}
+
+.session-details {
+  background-color: #81FFD9; /* light aqua background */
+  color: #051726; /* dark blue text */
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: .5rem;
+}
+
+.session-summary,
+.session-time {
+  margin: 0;
+}
+
+.metric-slider {
+  -webkit-appearance: none; /* Override default CSS for range input */
+  width: 100%; /* Slider width */
+  height: 5px; /* Slider height */
+  border-radius: 5px;  
+  background: #81FFD9; /* Slider background */
+  outline: none; /* Remove the outline */
+  opacity: 0.7; /* Make it slightly transparent */
+  -webkit-transition: .2s; /* Transition for the slider */
+  transition: opacity .2s;
+}
+
+.metric-slider:hover {
+  opacity: 1; /* Fully opaque on hover */
+}
+
+.metric-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; /* Override default look for the slider thumb */
+  appearance: none;
+  width: 25px; /* Set a specific slider handle width */
+  height: 25px; /* Slider handle height */
+  border-radius: 50%; 
+  background: #051726; /* Slider handle color */
+  cursor: pointer; /* Cursor on hover */
+}
+
+.metric-slider::-moz-range-thumb {
+  width: 25px; /* Set a specific slider handle width */
+  height: 25px; /* Slider handle height */
+  border-radius: 50%;
+  background: #051726; /* Slider handle color */
+  cursor: pointer; /* Cursor on hover */
+}
+
+.slider-value {
+  display: block;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.submit-btn {
+  background-color: #81FFD9; /* light aqua background */
+  color: #051726; /* dark blue text */
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.submit-btn:hover {
+  background-color: #66e0cc; /* a darker aqua for hover state */
+}
+
+/* Adjusts the spacing and layout of the checkboxes */
+.study-times-fieldset {
+  margin: 20px 0;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px; /* Adjust the space between checkboxes as per design requirement */
+  justify-content: space-between;
+}
+
+.checkbox-wrapper {
+  flex: 1 1 calc(50% - 10px); /* each checkbox label takes up half the width of the container, minus the gap */
+  max-width: calc(50% - 10px); /* also set a max-width to match flex-basis */
+}
+
+.checkbox-label {
+  display: block;
+  width: 100%;
+  background-color: #81FFD9; /* Aqua background color */
+  color: #051726; /* Dark slate text color */
+  padding: 10px;
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
+}
+
+/* Styles for the checkbox input */
+.checkbox-input {
+  opacity: 0; /* Hide the checkbox but keep it in the document flow */
+  position: absolute;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Styles to visually indicate the checkbox is checked */
+.checkbox-input:checked + .checkbox-label {
+  background-color: #051726; /* Dark slate background for checked state */
+  color: white; /* White text for checked state */
+}
+
+/* Hover styles for the label */
+.checkbox-label:hover {
+  background-color: #35a79c; /* A lighter shade for hover, if needed */
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #2c3e50; /* Your preferred background color */
+  padding: 10px 0; /* Add padding on top and bottom as needed */
+  display: flex;
+  justify-content: center; /* This will center the button horizontally */
+  align-items: center; /* This will center the button vertically */
+  z-index: 10; /* Ensures the bar stays above other content */
+}
+
+.generate-schedule-button {
+  padding: 10px 20px; /* Adjust padding to suit your design */
+  color: #FFF; /* Button text color */
+  background-color: #051726; /* Your preferred button color */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.generate-schedule-button:hover{
+  background-color: #35a79c;
+}
+
+/* Add this class to your user info to give it spacing at the bottom */
+.user-info {
+  margin-bottom: 60px; /* Adjust based on the height of your bottom bar */
+}
+

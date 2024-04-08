@@ -1,23 +1,40 @@
-/* LoginPage.css */
+/* LoginPage CSS */
 .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f5f5f5;
-  }
-  
-  .login-button {
-    font-size: 16px;
-    padding: 10px 20px;
-    border: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
-  }
-  
-  .login-button:hover {
-    background-color: #0056b3;
-  }
-  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #051726; /* Dark background color */
+}
+
+.logo {
+  margin-bottom: 1.5rem; /* Space below the logo */
+  width: 900px; /* Or your desired size */
+  height: auto;
+}
+
+.login-button {
+  background-color: #81FFD9; /* Teal color */
+  color: #051726; /* Dark text for contrast */
+  padding: 10px 15px;
+  border: none;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* Space between icon and text */
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Subtle shadow for depth */
+  transition: background-color 0.3s;
+}
+
+.login-button:hover {
+  background-color: #73e8c9; /* Slightly lighter teal on hover */
+}
+
+.icon {
+  width: 24px; /* Or your desired size */
+  height: auto;
+}

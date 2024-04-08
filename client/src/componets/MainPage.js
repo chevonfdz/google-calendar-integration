@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import StudentInputPage from "./StudentInputPage";
 import "react-toastify/dist/ReactToastify.css";
+import '../css/StudentInputPage.css'
 
 function MainPage() {
   const [events, setEvents] = useState([]);
   const [studentDetails, setStudentDetails] = useState({ preferredStudyTimes: {} });
   const [isScheduleGenerated, setIsScheduleGenerated] = useState(false);
+  const [studySessions, setStudySessions] = useState([]);
 
   useEffect(() => {
     handleGetEvents();
@@ -86,6 +88,7 @@ function MainPage() {
       // Proceed with existing logic to calculate free time slots and allocate study sessions
       const freeTimeSlots = calculateFreeTimeSlots(events, studentDetails);
       const studySessions = allocateStudySessions(freeTimeSlots, studyRecommendations, studentDetails);
+      setStudySessions(studySessions);
 
       // Create calendar events for each allocated study session
       for (const session of studySessions) {
@@ -99,8 +102,6 @@ function MainPage() {
       toast.error(`Failed to generate schedule: ${error.message}`);
     }
   };
-
-
 
   // This function finds the intersections between free time slots and preferred study times
   function calculateFreeTimeSlots(events, studentDetails) {
@@ -147,7 +148,7 @@ function MainPage() {
         return acc;
       }, []);
     }).flat();
-  }
+  };
 
   function findFreeSlots(events, today, endOfDay, preferredStudyTimes) {
     let freeTimeSlots = [];
@@ -174,7 +175,7 @@ function MainPage() {
     }
 
     return freeTimeSlots;
-  }
+  };
 
   function convertPreferredTimesToRanges(preferredStudyTimes = {}, referenceDate) {
     if (!preferredStudyTimes || typeof preferredStudyTimes !== 'object') {
@@ -185,7 +186,7 @@ function MainPage() {
       .filter(key => preferredStudyTimes[key]) // Filter out times that are not preferred
       .map(key => parseLabelToTimes(key, referenceDate))
       .filter(range => range); // Filter out any null ranges
-  }
+  };
 
   function parseLabelToTimes(timeLabel, referenceDate) {
 
@@ -211,7 +212,7 @@ function MainPage() {
     const endDate = new Date(referenceDate.setHours(timeRange.endHour, 0, 0, 0));
 
     return { start: startDate, end: endDate };
-  }
+  };
 
   function allocateStudySessions(freeTimeSlots, studyDurations) {
     const MAX_STUDY_DURATION = 45; // Maximum continuous study duration in minutes
@@ -261,17 +262,21 @@ function MainPage() {
     });
 
     return studySessions;
-  }
+  };
 
   return (
     <div>
-      <ToastContainer
-        position="top-center"
-        autoClose={5000}
-        hideProgressBar={false}
-      />
-      <StudentInputPage onStudentDetailsChange={updateStudentDetails} />
-      <button onClick={handleGenerateSchedule}>Generate Study Schedule</button>
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} />
+      <StudentInputPage onStudentDetailsChange={updateStudentDetails} studySessions={studySessions} />
+      <div className="bottom-bar">
+        <button
+          type="button"
+          className="generate-schedule-button"
+          onClick={handleGenerateSchedule}
+        >
+          Generate Study Schedules
+        </button>
+      </div>
     </div>
   );
 }
