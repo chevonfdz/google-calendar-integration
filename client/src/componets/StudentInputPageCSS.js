@@ -1,254 +1,284 @@
-import React, { useState } from 'react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import StudentInputPage from "./StudentInputPage";
+import "react-toastify/dist/ReactToastify.css";
+import '../css/StudentInputPage.css'
 
-const STREAMS_SUBJECTS = {
-  'Physical Science': ['Mathematics', 'Physics', 'Chemistry'],
-  'Physical Science - ICT': ['Mathematics', 'Physics', 'ICT'],
-  'Biological Science': ['Biology', 'Physics', 'Chemistry'],
-  'Biological Science - Agri': ['Biology', 'Chemistry', 'Agriculture'],
-  'Commerce': ['Accounting', 'Economics', 'Business Studies'],
-  'Commerce - ICT': ['Accounting', 'Economics', 'ICT']
-};
+function MainPage() {
+  const [events, setEvents] = useState([]);
+  const [studentDetails, setStudentDetails] = useState({ preferredStudyTimes: {} });
+  const [isScheduleGenerated, setIsScheduleGenerated] = useState(false);
+  const [studySessions, setStudySessions] = useState([]);
 
-const STUDY_TIMES = [
-    'Early Morning - 4.00 AM - 8.00AM',
-    'Morning - 8.00AM - 12NOON',
-    'Afternoon - 12NOON - 4.00PM',
-    'Evening - 4.00PM - 8.00PM',
-    'Night - 8.00PM - 12MID',
-    'Late Night - 12MID - 4.00AM'
-  ];
+  useEffect(() => {
+    handleGetEvents();
+  }, []);
 
-  function StudentInputPage() {
-    const [formData, setFormData] = useState({
-      stream: '',
-      subjects: [],
-      previousMarks: {},
-      difficultyLevels: {},
-      desiredMarks: {},
-      targetDates: {},
-      preferredStudyTimes: STUDY_TIMES.reduce((times, time) => ({ ...times, [time]: false }), {}),
-      maxContinuousStudyDuration: 30,
-      breakDuration: 5,
-    });
+  const handleCreateEvent = async (eventDetails) => {
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_SERVER_URL}/google/schedule_event`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(eventDetails),
+        }
+      );
 
-    const handleStreamChange = (event) => {
-      const stream = event.target.value;
-      const subjects = STREAMS_SUBJECTS[stream];
-  
-      setFormData(prev => ({
-        ...prev,
-        stream,
-        subjects,
-        previousMarks: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {}),
-        difficultyLevels: subjects.reduce((acc, subject) => ({ ...acc, [subject]: 3 }), {}),
-        desiredMarks: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {}),
-        targetDates: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {})
-      }));
+      if (!response.ok) throw new Error("Network response was not ok");
+      const data = await response.json();
+      setEvents((prevEvents) => [...prevEvents, data]);
+      toast.success("Event created successfully!");
+    } catch (error) {
+      toast.error("Error creating event: " + error.message);
+      console.error("Error creating event:", error);
+    }
+  };
+
+  const handleGetEvents = async () => {
+    try {
+      const today = new Date();
+      const localDate = new Date(
+        today.getTime() - today.getTimezoneOffset() * 60000
+      )
+        .toISOString()
+        .split("T")[0];
+      const response = await fetch(
+        `${process.env.REACT_APP_SERVER_URL}/google/get_events?date=${localDate}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setEvents(data);
+      toast.info("Events fetched successfully!");
+    } catch (error) {
+      toast.error("Error fetching events.");
+      console.error("Error fetching events:", error);
+    }
+  };
+
+  const updateStudentDetails = (newDetails) => {
+    const updatedDetails = {
+      ...newDetails,
+      preferredStudyTimes: newDetails.preferredStudyTimes || {}
     };
 
-  const handleCategoryChange = (event) => {
-    const index = Number(event.target.value);
-    const subjects = STREAMS_SUBJECTS[formData.stream][index];
-
-    setFormData(prev => ({
-      ...prev,
-      categoryIndex: index,
-      subjects,
-      previousMarks: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {}),
-      difficultyLevels: subjects.reduce((acc, subject) => ({ ...acc, [subject]: 3 }), {}),
-      desiredMarks: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {}),
-      targetDates: subjects.reduce((acc, subject) => ({ ...acc, [subject]: '' }), {})
-    }));
+    setStudentDetails(updatedDetails);
   };
 
-  const handleInputChange = (event, type, subject) => {
-    const value = event.target.value;
-    setFormData(prev => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [subject]: value
+  const handleGenerateSchedule = async () => {
+    if (!studentDetails || Object.keys(studentDetails).length === 0) {
+      toast.error("Please fill out the student details first.");
+      return;
+    }
+
+    try {
+      const mlModelResponse = await fetch(`${process.env.REACT_APP_SERVER_URL}/generate-schedule`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentDetails),
+      });
+
+      if (!mlModelResponse.ok) throw new Error("Failed to receive schedule from ML model.");
+      const studyRecommendations = await mlModelResponse.json(); // Ensure this matches the expected format for allocateStudySessions
+
+      // Proceed with existing logic to calculate free time slots and allocate study sessions
+      const freeTimeSlots = calculateFreeTimeSlots(events, studentDetails);
+      const studySessions = allocateStudySessions(freeTimeSlots, studyRecommendations, studentDetails);
+      setStudySessions(studySessions);
+
+      // Create calendar events for each allocated study session
+      for (const session of studySessions) {
+        await handleCreateEvent(session);
       }
-    }));
+
+      setIsScheduleGenerated(true);
+      toast.success("Study schedule generated successfully!");
+    } catch (error) {
+      console.error("Error generating schedule:", error);
+      toast.error(`Failed to generate schedule: ${error.message}`);
+    }
   };
 
-  const handleDateChange = (event, subject) => {
-    handleInputChange(event, 'targetDates', subject);
+  // This function finds the intersections between free time slots and preferred study times
+  function calculateFreeTimeSlots(events, studentDetails) {
+    const currentTime = new Date();
+    const nextDay = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
+    const endOfNextDay = new Date(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 23, 59, 59, 999);
+
+    const relevantEvents = events.filter(event => {
+      const eventEnd = new Date(event.end.dateTime);
+      return eventEnd >= currentTime && eventEnd <= endOfNextDay;
+    });
+
+    const preferredStudyTimes = studentDetails.preferredStudyTimes || {};
+    const freeTimeSlots = findFreeSlots(relevantEvents, nextDay, endOfNextDay, preferredStudyTimes);
+    const preferredTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, nextDay, endOfNextDay);
+
+    const availableStudySlots = freeTimeSlots.filter(slot =>
+      preferredTimeSlots.some(preferredSlot =>
+        slot.end > preferredSlot.start && slot.start < preferredSlot.end
+      )
+    );
+
+    // Map to get only the overlapping times
+    return availableStudySlots.map(slot => {
+      const overlappingRanges = preferredTimeSlots
+        .filter(preferredSlot => slot.end > preferredSlot.start && slot.start < preferredSlot.end)
+        .map(preferredSlot => ({
+          start: slot.start > preferredSlot.start ? slot.start : preferredSlot.start,
+          end: slot.end < preferredSlot.end ? slot.end : preferredSlot.end,
+        }));
+
+      // Combine the overlapping ranges if they are adjacent or overlapping
+      return overlappingRanges.reduce((acc, current) => {
+        // If the current slot starts before the previous one ends, it's overlapping
+        if (acc.length && current.start <= acc[acc.length - 1].end) {
+          const last = acc.pop();
+          acc.push({
+            start: last.start,
+            end: current.end > last.end ? current.end : last.end,
+          });
+        } else {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+    }).flat();
   };
 
-  const handlePreferredStudyTimesChange = (timeSlot) => {
-    setFormData(prev => ({
-      ...prev,
-      preferredStudyTimes: {
-        ...prev.preferredStudyTimes,
-        [timeSlot]: !prev.preferredStudyTimes[timeSlot]
-      }
-    }));
-  };
+  function findFreeSlots(events, today, endOfDay, preferredStudyTimes) {
+    let freeTimeSlots = [];
+    if (events.length === 0 && Object.keys(preferredStudyTimes).length > 0) {
+      freeTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, today);
+    } else {
+      let lastEventEnd = today;
+      lastEventEnd.setHours(0, 0, 0, 0);
 
-  const handleMaxContinuousStudyDurationChange = (event) => {
-    const duration = Math.max(30, Math.min(Number(event.target.value), 90));
-    setFormData(prev => ({
-      ...prev,
-      maxContinuousStudyDuration: duration
-    }));
-  };
+      events.forEach(event => {
+        const eventStart = new Date(event.start.dateTime);
+        const eventEnd = new Date(event.end.dateTime);
 
-  const handleBreakDurationChange = (event) => {
-    const duration = Math.max(5, Math.min(Number(event.target.value), 20));
-    setFormData(prev => ({
-      ...prev,
-      breakDuration: duration
-    }));
-  };
+        if (eventStart > lastEventEnd) {
+          freeTimeSlots.push({ start: lastEventEnd, end: eventStart });
+        }
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    // Here, you would validate the formData before sending to your backend
-    // For example, ensure that all desired marks are greater than previous marks
-    for (const subject of formData.subjects) {
-      if (parseFloat(formData.desiredMarks[subject]) <= parseFloat(formData.previousMarks[subject])) {
-        toast.error(`Desired marks for ${subject} must be greater than previous marks.`);
-        return; // Prevent form submission if validation fails
+        lastEventEnd = eventEnd;
+      });
+
+      if (lastEventEnd < endOfDay) {
+        freeTimeSlots.push({ start: lastEventEnd, end: endOfDay });
       }
     }
-    console.log(formData); 
-    toast.success('Student details submitted!');
+
+    return freeTimeSlots;
+  };
+
+  function convertPreferredTimesToRanges(preferredStudyTimes = {}, referenceDate) {
+    if (!preferredStudyTimes || typeof preferredStudyTimes !== 'object') {
+      console.error('Invalid preferredStudyTimes:', preferredStudyTimes);
+      return [];
+    }
+    return Object.keys(preferredStudyTimes)
+      .filter(key => preferredStudyTimes[key]) // Filter out times that are not preferred
+      .map(key => parseLabelToTimes(key, referenceDate))
+      .filter(range => range); // Filter out any null ranges
+  };
+
+  function parseLabelToTimes(timeLabel, referenceDate) {
+
+    const labelKey = timeLabel.split(' - ')[0].trim();
+
+    const timeMappings = {
+      "Early Morning": { startHour: 4, endHour: 8 },
+      "Morning": { startHour: 8, endHour: 12 },
+      "Afternoon": { startHour: 12, endHour: 16 },
+      "Evening": { startHour: 16, endHour: 20 },
+      "Night": { startHour: 20, endHour: 24 },
+      "Late Night": { startHour: 0, endHour: 4 }
+    };
+
+    const timeRange = timeMappings[labelKey];
+    if (!timeRange) {
+      console.error("Unhandled time label:", timeLabel);
+      return null;
+    }
+
+    // Calculate the start and end times using the extracted label
+    const startDate = new Date(referenceDate.setHours(timeRange.startHour, 0, 0, 0));
+    const endDate = new Date(referenceDate.setHours(timeRange.endHour, 0, 0, 0));
+
+    return { start: startDate, end: endDate };
+  };
+
+  function allocateStudySessions(freeTimeSlots, studyDurations) {
+    const MAX_STUDY_DURATION = 45; // Maximum continuous study duration in minutes
+    const BREAK_TIME = 10; // Break time in minutes
+    const studySessions = [];
+
+    Object.entries(studyDurations).forEach(([subject, requiredDuration]) => {
+      let remainingDuration = requiredDuration;
+
+      while (remainingDuration > 0) {
+        // Find the first slot that can accommodate the session
+        const slotIndex = freeTimeSlots.findIndex(slot => {
+          const slotDuration = (new Date(slot.end) - new Date(slot.start)) / 60000;
+          return slotDuration >= MAX_STUDY_DURATION;
+        });
+
+        if (slotIndex !== -1) {
+          const currentStudyDuration = Math.min(MAX_STUDY_DURATION, remainingDuration);
+          const slot = freeTimeSlots[slotIndex];
+          const startDateTime = new Date(slot.start);
+          const endDateTime = new Date(startDateTime.getTime() + currentStudyDuration * 60000);
+
+          // Push the study session
+          studySessions.push({
+            summary: `Study ${subject}`,
+            description: `Dedicated time to study ${subject}`,
+            start: { dateTime: startDateTime.toISOString() },
+            end: { dateTime: endDateTime.toISOString() },
+          });
+
+          // Update remaining duration and the slot start time to reflect the booked session
+          remainingDuration -= currentStudyDuration;
+          slot.start = new Date(endDateTime.getTime() + BREAK_TIME * 60000).toISOString();
+
+          // If there is remaining duration, check if we need to add a break
+          if (remainingDuration > 0 && currentStudyDuration === MAX_STUDY_DURATION) {
+            // Consider break time
+            const breakEndDateTime = new Date(slot.start).getTime() + BREAK_TIME * 60000;
+            slot.start = new Date(breakEndDateTime).toISOString();
+          }
+        } else {
+          // No suitable slot found, warn the user
+          toast.warn(`Not enough time to schedule study for ${subject}.`);
+          break;
+        }
+      }
+    });
+
+    return studySessions;
   };
 
   return (
-    <div className="min-h-screen bg-gray-800 text-white flex items-center justify-center p-4">
-      <div className="max-w-3xl w-full">
-        <h2 className="text-3xl font-bold text-center mb-6">Student Details</h2>
-        <form onSubmit={handleSubmit} className="bg-gray-700 rounded-lg p-8 space-y-4">
-          <div className="flex flex-col">
-            <label htmlFor="stream" className="font-semibold">Study Stream:</label>
-            <select 
-              id="stream"
-              className="bg-gray-600 text-white p-2 rounded focus:ring-2 focus:ring-blue-500"
-              value={formData.stream} 
-              onChange={handleStreamChange}
-            >
-              <option value="">Select Stream</option>
-              {Object.keys(STREAMS_SUBJECTS).map(stream => (
-                <option key={stream} value={stream}>{stream}</option>
-              ))}
-            </select>
-          </div>
-
-          <fieldset className="space-y-2">
-            <legend className="font-semibold">Preferred Study Times:</legend>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {STUDY_TIMES.map(timeSlot => (
-                <label key={timeSlot} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-5 w-5 text-blue-600"
-                    checked={formData.preferredStudyTimes[timeSlot]}
-                    onChange={() => handlePreferredStudyTimesChange(timeSlot)}
-                  />
-                  <span className="ml-2">{timeSlot}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="flex flex-wrap -mx-2 space-y-4 md:space-y-0">
-            <div className="px-2 w-full md:w-1/2">
-              <label htmlFor="maxContinuousStudyDuration" className="font-semibold">
-                Max Continuous Study Duration (min):
-              </label>
-              <input
-                id="maxContinuousStudyDuration"
-                type="number"
-                className="bg-gray-600 text-white p-2 rounded focus:ring-2 focus:ring-blue-500 w-full"
-                value={formData.maxContinuousStudyDuration}
-                onChange={handleMaxContinuousStudyDurationChange}
-                min="30"
-                max="90"
-              />
-            </div>
-            
-            <div className="px-2 w-full md:w-1/2">
-              <label htmlFor="breakDuration" className="font-semibold">
-                Break Duration (min):
-              </label>
-              <input
-                id="breakDuration"
-                type="number"
-                className="bg-gray-600 text-white p-2 rounded focus:ring-2 focus:ring-blue-500 w-full"
-                value={formData.breakDuration}
-                onChange={handleBreakDurationChange}
-                min="5"
-                max="20"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-          {formData.subjects.map(subject => (
-        <div key={subject} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <label className="block">
-            <span className="text-gray-700">{`Previous marks for ${subject}`}</span>
-            <input
-              type="number"
-              className="mt-1 block w-full rounded-md bg-gray-200 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0"
-              placeholder="Enter previous marks"
-              value={formData.previousMarks[subject]}
-              onChange={(e) => handleInputChange(e, 'previousMarks', subject)}
-              min="0"
-              max="100"
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">{`Difficulty level for ${subject}`}</span>
-            <input
-              type="number"
-              className="mt-1 block w-full rounded-md bg-gray-200 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0"
-              placeholder="Enter difficulty level"
-              value={formData.difficultyLevels[subject]}
-              onChange={(e) => handleInputChange(e, 'difficultyLevels', subject)}
-              min="1"
-              max="5"
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">{`Desired marks for ${subject}`}</span>
-            <input
-              type="number"
-              className="mt-1 block w-full rounded-md bg-gray-200 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0"
-              placeholder="Enter desired marks"
-              value={formData.desiredMarks[subject]}
-              onChange={(e) => handleInputChange(e, 'desiredMarks', subject)}
-              min="0"
-              max="100"
-            />
-          </label>
-          <label className="block">
-            <span className="text-gray-700">{`Target date for ${subject}`}</span>
-            <input
-              type="date"
-              className="mt-1 block w-full rounded-md bg-gray-200 border-transparent focus:border-gray-500 focus:bg-white focus:ring-0"
-              value={formData.targetDates[subject]}
-              onChange={(e) => handleDateChange(e, subject)}
-            />
-          </label>
-        </div>
-      ))}
-          </div>
-
-          <button 
-            type="submit" 
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full transition-colors duration-300"
-          >
-            Submit
-          </button>
-        </form>
+    <div>
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} />
+      <StudentInputPage onStudentDetailsChange={updateStudentDetails} studySessions={studySessions} />
+      <div className="bottom-bar">
+        <button
+          type="button"
+          className="generate-schedule-button"
+          onClick={handleGenerateSchedule}
+        >
+          Generate Study Schedules
+        </button>
       </div>
     </div>
   );
 }
 
-export default StudentInputPage;
+export default MainPage;

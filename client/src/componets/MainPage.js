@@ -87,7 +87,7 @@ function MainPage() {
 
       // Proceed with existing logic to calculate free time slots and allocate study sessions
       const freeTimeSlots = calculateFreeTimeSlots(events, studentDetails);
-      const studySessions = allocateStudySessions(freeTimeSlots, studyRecommendations, studentDetails);
+      const studySessions = allocateStudySessions(freeTimeSlots, studyRecommendations);
       setStudySessions(studySessions);
 
       // Create calendar events for each allocated study session
@@ -103,21 +103,12 @@ function MainPage() {
     }
   };
 
-  // This function finds the intersections between free time slots and preferred study times
   function calculateFreeTimeSlots(events, studentDetails) {
-    const currentTime = new Date();
-    const nextDay = new Date(currentTime.getTime() + 24 * 60 * 60 * 1000);
-    const endOfNextDay = new Date(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 23, 59, 59, 999);
-
-    const relevantEvents = events.filter(event => {
-      const eventEnd = new Date(event.end.dateTime);
-      return eventEnd >= currentTime && eventEnd <= endOfNextDay;
-    });
-
+    const today = new Date();
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
     const preferredStudyTimes = studentDetails.preferredStudyTimes || {};
-    const freeTimeSlots = findFreeSlots(relevantEvents, nextDay, endOfNextDay, preferredStudyTimes);
-    const preferredTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, nextDay, endOfNextDay);
-
+    const freeTimeSlots = findFreeSlots(events, today, endOfDay, preferredStudyTimes);
+    const preferredTimeSlots = convertPreferredTimesToRanges(preferredStudyTimes, today);
     const availableStudySlots = freeTimeSlots.filter(slot =>
       preferredTimeSlots.some(preferredSlot =>
         slot.end > preferredSlot.start && slot.start < preferredSlot.end
@@ -134,6 +125,7 @@ function MainPage() {
         }));
 
       // Combine the overlapping ranges if they are adjacent or overlapping
+      // Additional logic can be added here to merge time slots as needed
       return overlappingRanges.reduce((acc, current) => {
         // If the current slot starts before the previous one ends, it's overlapping
         if (acc.length && current.start <= acc[acc.length - 1].end) {
@@ -148,7 +140,7 @@ function MainPage() {
         return acc;
       }, []);
     }).flat();
-  };
+  }
 
   function findFreeSlots(events, today, endOfDay, preferredStudyTimes) {
     let freeTimeSlots = [];
@@ -215,58 +207,62 @@ function MainPage() {
   };
 
   function allocateStudySessions(freeTimeSlots, studyDurations) {
-    const MAX_STUDY_DURATION = 45; // Maximum continuous study duration in minutes
-    const BREAK_TIME = 10; // Break time in minutes
+    const MAX_STUDY_DURATION = 60; // Maximum continuous study duration in minutes
+    const BREAK_TIME = 5; // Break time in minutes
     const studySessions = [];
-
+  
     Object.entries(studyDurations).forEach(([subject, requiredDuration]) => {
       let remainingDuration = requiredDuration;
-
+  
       while (remainingDuration > 0) {
-        // Find the first slot that can accommodate the session
-        const slotIndex = freeTimeSlots.findIndex(slot => {
+        let slotIndex = freeTimeSlots.findIndex(slot => {
           const slotDuration = (new Date(slot.end) - new Date(slot.start)) / 60000;
-          return slotDuration >= MAX_STUDY_DURATION;
+          return slotDuration >= Math.min(MAX_STUDY_DURATION, remainingDuration);
         });
-
+  
         if (slotIndex !== -1) {
-          const currentStudyDuration = Math.min(MAX_STUDY_DURATION, remainingDuration);
-          const slot = freeTimeSlots[slotIndex];
-          const startDateTime = new Date(slot.start);
-          const endDateTime = new Date(startDateTime.getTime() + currentStudyDuration * 60000);
-
-          // Push the study session
+          let currentStudyDuration = Math.min(MAX_STUDY_DURATION, remainingDuration);
+          let slot = freeTimeSlots[slotIndex];
+          let startDateTime = new Date(slot.start);
+          let endDateTime = new Date(startDateTime.getTime() + currentStudyDuration * 60000);
+  
+          // Schedule the study session
           studySessions.push({
             summary: `Study ${subject}`,
             description: `Dedicated time to study ${subject}`,
             start: { dateTime: startDateTime.toISOString() },
             end: { dateTime: endDateTime.toISOString() },
           });
-
-          // Update remaining duration and the slot start time to reflect the booked session
+  
           remainingDuration -= currentStudyDuration;
-          slot.start = new Date(endDateTime.getTime() + BREAK_TIME * 60000).toISOString();
-
-          // If there is remaining duration, check if we need to add a break
+  
+          // If there is remaining duration and we've just scheduled a full session, add a break
           if (remainingDuration > 0 && currentStudyDuration === MAX_STUDY_DURATION) {
-            // Consider break time
-            const breakEndDateTime = new Date(slot.start).getTime() + BREAK_TIME * 60000;
-            slot.start = new Date(breakEndDateTime).toISOString();
+            endDateTime = new Date(endDateTime.getTime() + BREAK_TIME * 60000);
+          }
+  
+          // Adjust the current slot's start time or split the slot if there's remaining time
+          if (endDateTime < new Date(slot.end)) {
+            // There's still time left in this slot, so adjust the start time for the next session
+            slot.start = endDateTime;
+          } else {
+            // This slot is fully used, so remove it
+            freeTimeSlots.splice(slotIndex, 1);
           }
         } else {
           // No suitable slot found, warn the user
-          toast.warn(`Not enough time to schedule study for ${subject}.`);
-          break;
+          toast.warn(`Not enough time to schedule study for ${subject}. Remaining duration: ${remainingDuration} minutes.`);
+          break; // Break out of the while loop; we can't schedule any more sessions for this subject
         }
       }
     });
-
+  
     return studySessions;
   };
-
+  
   return (
     <div>
-      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} />
+      <ToastContainer position="top-right" autoClose={1500} hideProgressBar={false} />
       <StudentInputPage onStudentDetailsChange={updateStudentDetails} studySessions={studySessions} />
       <div className="bottom-bar">
         <button
